@@ -204,7 +204,7 @@ def refresh_vdb_to_latest(
     params = RefreshVDBByTimestampParameters()
     resp = vdbs_api.refresh_vdb_by_timestamp(
         vdb_id,
-        refresh_vdb_by_timestamp_parameters=params,
+        refresh_vdbby_timestamp_parameters=params,
     )
 
     job = getattr(resp, "job", None)
