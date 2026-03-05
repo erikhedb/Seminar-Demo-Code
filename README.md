@@ -4,7 +4,7 @@ Two small demos that use the Delphix DCT SDKs to list VDBs and optionally refres
 
 ## Go demo
 
-Lists VDB name, size, and storage size. If you pass a VDB name as an argument, it refreshes that VDB and waits for completion.
+Lists VDB name, size, and storage size. If you pass a VDB name or ID as an argument, it refreshes that VDB and waits for completion (name also works as ID).
 
 Run:
 

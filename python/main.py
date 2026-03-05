@@ -5,7 +5,7 @@
 #
 # Overview
 # - Lists all VDBs with size and storage size.
-# - Optional: refresh a named VDB to the latest timestamp.
+# - Optional: refresh a VDB by name or ID (the API accepts name as ID).
 #
 # Environment
 # - DCT_ENGINE_URL e.g. https://your-engine.example.com
@@ -21,7 +21,7 @@
 # Usage (uv)
 #
 #	uv run python main.py
-#	uv run python main.py "prod01-copy01"
+#	uv run python main.py "prod01-copy01"  # name works as id
 #
 # Output (tab-separated)
 #
@@ -34,8 +34,6 @@ import os
 import sys
 import time
 import urllib3
-from typing import Tuple
-
 import delphix.api.gateway
 from delphix.api.gateway.api.vdbs_api import VDBsApi
 from delphix.api.gateway.api.jobs_api import JobsApi
@@ -66,11 +64,10 @@ def main() -> int:
     print_config(engine_url, api_key)
 
     if len(sys.argv) > 1:
-        vdb_name = sys.argv[1].strip()
-        if not vdb_name:
-            raise SystemExit("vdb name argument is empty")
-        vdb_id, resolved_name = find_vdb_by_name(vdbs_api, vdb_name)
-        refresh_vdb_to_latest(vdbs_api, jobs_api, vdb_id, resolved_name)
+        vdb_ref = sys.argv[1].strip()
+        if not vdb_ref:
+            raise SystemExit("vdb name/id argument is empty")
+        refresh_vdb_to_latest(vdbs_api, jobs_api, vdb_ref, vdb_ref)
         return 0
 
     print("name\tsize_bytes\tstorage_bytes")
@@ -151,40 +148,6 @@ def mask_secret(value: str) -> str:
     if len(value) <= keep:
         return "*" * len(value)
     return "*" * (len(value) - keep) + value[-keep:]
-
-
-# ----------------------------------------------------------------------------
-# Lookup
-# - Resolves a VDB name to a unique ID.
-# - Pages through the VDB list.
-# ----------------------------------------------------------------------------
-
-def find_vdb_by_name(vdbs_api: VDBsApi, target_name: str) -> Tuple[str, str]:
-    cursor = ""
-    found_id = ""
-    found_name = ""
-
-    while True:
-        if cursor:
-            resp = vdbs_api.get_vdbs(limit=DEFAULT_PAGE_SIZE, cursor=cursor)
-        else:
-            resp = vdbs_api.get_vdbs(limit=DEFAULT_PAGE_SIZE)
-        for vdb in (getattr(resp, "items", None) or []):
-            name = getattr(vdb, "name", None) or ""
-            if name == target_name:
-                if found_id:
-                    raise SystemExit(f"multiple VDBs named {target_name!r}")
-                found_id = getattr(vdb, "id", None) or ""
-                found_name = name
-
-        cursor = getattr(getattr(resp, "response_metadata", None), "next_cursor", None) or ""
-        if not cursor:
-            break
-
-    if not found_id:
-        raise SystemExit(f"no VDB found named {target_name!r}")
-
-    return found_id, found_name
 
 
 # ----------------------------------------------------------------------------

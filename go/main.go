@@ -4,7 +4,7 @@
 //
 // Overview
 // - Lists all VDBs with size and storage size.
-// - Optional: refresh a named VDB to the latest timestamp.
+// - Optional: refresh a VDB by name or ID (the API accepts name as ID).
 //
 // Environment
 // - DCT_ENGINE_URL e.g. https://your-engine.example.com
@@ -18,7 +18,7 @@
 // Usage
 //
 //	go run .
-//	go run . "prod01-copy01"
+//	go run . "prod01-copy01"  // name works as id
 //
 // Output (tab-separated)
 //
@@ -59,15 +59,11 @@ func main() {
 	printConfig(engineURL, apiKey)
 
 	if len(os.Args) > 1 {
-		vdbName := strings.TrimSpace(os.Args[1])
-		if vdbName == "" {
-			log.Fatalf("vdb name argument is empty")
+		vdbRef := strings.TrimSpace(os.Args[1])
+		if vdbRef == "" {
+			log.Fatalf("vdb name/id argument is empty")
 		}
-		vdbID, resolvedName, err := findVdbByName(ctx, client, vdbName)
-		if err != nil {
-			log.Fatalf("find vdb: %v", err)
-		}
-		if err := refreshVdbToLatest(ctx, client, vdbID, resolvedName); err != nil {
+		if err := refreshVdbToLatest(ctx, client, vdbRef, vdbRef); err != nil {
 			log.Fatalf("refresh vdb: %v", err)
 		}
 		return
@@ -197,55 +193,6 @@ func maskSecret(value string) string {
 		return strings.Repeat("*", len(value))
 	}
 	return strings.Repeat("*", len(value)-keep) + value[len(value)-keep:]
-}
-
-// ----------------------------------------------------------------------------
-// Lookup
-// - Resolves a VDB name to a unique ID.
-// - Pages through the VDB list.
-// ----------------------------------------------------------------------------
-func findVdbByName(ctx context.Context, client *dct.APIClient, targetName string) (string, string, error) {
-	cursor := ""
-	foundID := ""
-	foundName := ""
-
-	for {
-		req := client.VDBsAPI.GetVdbs(ctx).Limit(defaultPageSize)
-		if cursor != "" {
-			req = req.Cursor(cursor)
-		}
-
-		resp, _, err := req.Execute()
-		if err != nil {
-			return "", "", fmt.Errorf("list vdbs: %w", err)
-		}
-
-		for _, vdb := range resp.Items {
-			name := safeNullableString(vdb.Name)
-			if name == targetName {
-				if foundID != "" {
-					return "", "", fmt.Errorf("multiple VDBs named %q", targetName)
-				}
-				foundID = safePtrString(vdb.Id)
-				foundName = name
-			}
-		}
-
-		next := ""
-		if resp.ResponseMetadata != nil && resp.ResponseMetadata.NextCursor != nil {
-			next = *resp.ResponseMetadata.NextCursor
-		}
-		if next == "" {
-			break
-		}
-		cursor = next
-	}
-
-	if foundID == "" {
-		return "", "", fmt.Errorf("no VDB found named %q", targetName)
-	}
-
-	return foundID, foundName, nil
 }
 
 // ----------------------------------------------------------------------------
