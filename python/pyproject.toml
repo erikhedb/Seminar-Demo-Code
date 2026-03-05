@@ -1,0 +1,11 @@
+[project]
+name = "dct-seminar-python"
+version = "0.1.0"
+description = "Delphix DCT SDK demo."
+requires-python = ">=3.10"
+dependencies = [
+    "delphix-dct-api",
+]
+
+[tool.uv]
+dev-dependencies = []
