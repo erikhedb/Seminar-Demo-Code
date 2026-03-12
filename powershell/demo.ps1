@@ -15,11 +15,11 @@
 # ============================================================
 # CONFIGURATION - update these values before running
 # ============================================================
-$BaseUrl              = 'https://16.171.99.221'
-$VdbId                = 'np2-VDB02'
-$MaskingJobId         = '89c67404-6c9b-4878-a000-0fc569a205d5'
-$EngineId             = 'ME1'
-$ReplicationProfileId = 'replication-profile-789'
+$BaseUrl              = 'https://URL'
+$VdbId                = 'VDB-NAME'
+$MaskingJobId         = '89c67404-6c9b-4878-a000-0fc569a20XXXX'
+$EngineId             = 'ENGINE_ID'
+$ReplicationProfileId = 'replication-profile-XXX'
 # ============================================================
 
 $ApiKey = $env:DCT_API_KEY
